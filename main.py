@@ -6,7 +6,7 @@ import argparse
 
 def main(verbose=True, graphical=True):
     # --- Capture a frame from the camera ---
-    cap = cv2.VideoCapture(0)  # Try 0 for default webcam
+    cap = cv2.VideoCapture(0)
     ret, image = cap.read()
     cap.release()
 
@@ -33,27 +33,30 @@ def main(verbose=True, graphical=True):
         cv2.circle(color_output, (x, y), r, (0, 255, 0), 2)
         cv2.circle(color_output, (x, y), 3, (255, 0, 0), -1)
 
-        vert_line = []
+        # Extract horizontal intensity values from center outward
+        horiz_line = []
         for radius in range(r):
-            yy = y + radius
-            if 0 <= yy < gray.shape[0]:
-                vert_line.append(gray[yy, x])
+            xx = x + radius
+            if 0 <= xx < gray.shape[1]:
+                horiz_line.append(gray[y, xx])
 
-        vert_line = np.array(vert_line, dtype=np.float32)
-        gradient = np.abs(np.diff(vert_line))
+        horiz_line = np.array(horiz_line, dtype=np.float32)
+        gradient = np.abs(np.diff(horiz_line))
         peaks, _ = find_peaks(gradient, prominence=5)
 
-        refined_peaks = [p for p in peaks if (p + 1 < len(vert_line)) and vert_line[p + 1] <= 50]
+        # Filter out peaks above intensity threshold
+        refined_peaks = [p for p in peaks if (p + 1 < len(horiz_line)) and horiz_line[p + 1] <= 50]
         refined_peaks = np.array(refined_peaks)
 
+        # Draw detected groove rings and points
         for p in refined_peaks:
             cv2.circle(color_output, (x, y), p, (200, 200, 200), 3)
 
         for p in refined_peaks:
-            px, py = x, (p + 1) + y
+            px, py = (p + 1) + x, y
             cv2.circle(color_output, (px, py), 2, (0, 0, 255), -1)
 
-        scale_factor = 152.4 / r
+        scale_factor = 152.4 / r  # LP radius in mm
         distance_from_outer_edge = list(map(lambda x: round((r - x) * scale_factor, 2), refined_peaks))
 
         if verbose:
@@ -69,9 +72,9 @@ def main(verbose=True, graphical=True):
             plt.axis("off")
 
             plt.subplot(1, 3, 2)
-            plt.title("Vertical Intensity Profile")
-            plt.plot(vert_line, label="Intensity")
-            plt.plot(refined_peaks + 1, vert_line[refined_peaks + 1], "rx", label="Detected Edges")
+            plt.title("Horizontal Intensity Profile")
+            plt.plot(horiz_line, label="Intensity")
+            plt.plot(refined_peaks + 1, horiz_line[refined_peaks + 1], "rx", label="Detected Edges")
             plt.xlabel("Pixels from center outward")
             plt.ylabel("Intensity")
             plt.grid(True)
@@ -79,7 +82,7 @@ def main(verbose=True, graphical=True):
 
             plt.subplot(1, 3, 3)
             plt.title("Line Visualization (Gray)")
-            line_img = vert_line.astype(np.uint8).reshape(-1, 1)
+            line_img = horiz_line.astype(np.uint8).reshape(1, -1)
             plt.imshow(line_img, cmap='gray', aspect='auto')
             plt.axis("off")
 
