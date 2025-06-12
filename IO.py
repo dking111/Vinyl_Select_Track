@@ -1,8 +1,9 @@
 import RPi.GPIO as GPIO 
-import os
+from main import main
 
 def button_callback(channel):
-    os.system('python main.py')
+    print("Starting Main")
+    return main(verbose=False)
 
 
 GPIO.setwarnings(False) 
@@ -12,4 +13,3 @@ GPIO.add_event_detect(10,GPIO.RISING,callback=button_callback,bouncetime=1000)
 message = input("Press enter to quit\n\n") 
 GPIO.cleanup() #
 
-button_callback(1)
