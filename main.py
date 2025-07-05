@@ -18,7 +18,7 @@ def get_sample(centre_x, centre_y, r, grey, angle_rad):
     return np.array(sample, dtype=np.float32), coords
 
 
-def find_repeated_similar_distances(distance_lists, tolerance=2.5, min_occurrences=4):
+def find_repeated_similar_distances(distance_lists, tolerance=3.0, min_occurrences=2):
     all_values = []
     for i, sublist in enumerate(distance_lists):
         for val in sublist:
@@ -57,7 +57,7 @@ def main(verbose=True, test_img=False):
             print("Failed to capture image from camera.")
             return
     else:
-        image = cv2.imread("vinyl.jpeg", cv2.IMREAD_COLOR)
+        image = cv2.imread("vinyl.jpg", cv2.IMREAD_COLOR)
 
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     height, width = grey.shape
@@ -133,6 +133,23 @@ def main(verbose=True, test_img=False):
     for peak_coords in all_refined_peaks_coords:
         for px, py in peak_coords:
             cv2.circle(color_output, (px, py), 2, (0, 0, 255), -1)  # red
+
+
+
+    track_length = []
+    track_elapsed_times = list(map(lambda x: (x / 86) * 1200, final_distances))
+    print(f"Track_Elpased_Times: {track_elapsed_times}")
+
+    for i in range(len(track_elapsed_times)):
+        if i == 0:
+            track_length.append(track_elapsed_times[i])
+        else:
+            track_length.append(track_elapsed_times[i] - track_elapsed_times[i - 1])
+
+    
+
+
+    
 
     # Show final visualization
     plt.figure(figsize=(8, 8))
