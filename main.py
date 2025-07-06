@@ -5,10 +5,18 @@ from scipy.signal import find_peaks
 import argparse
 import math
 from typing import Tuple,List
+
 TEST_IMG_PTH = "vinyl.jpg"
-NUM_SAMPLES = 8
+NUM_SAMPLES = 64
 LP_R = 302 / 2 
 
+
+#IMG ADJUSTMENTS
+ALPHA = 1.0
+
+#repeated distance 
+MIN_OCCURENCES = NUM_SAMPLES // 4 if NUM_SAMPLES <= 16 else NUM_SAMPLES // 8
+TOLERANCE = 4.0
 
 
 def get_sample(centre_x: np.int32, centre_y: np.int32, r: np.int32,
@@ -39,7 +47,7 @@ def get_sample(centre_x: np.int32, centre_y: np.int32, r: np.int32,
     return np.array(sample, dtype=np.float32), coords
 
 
-def find_repeated_similar_distances(distance_lists:List[List[np.float64]], tolerance:float = 3.0, min_occurrences:int = 2) -> List[np.float64]:
+def find_repeated_similar_distances(distance_lists:List[List[np.float64]], tolerance:float = TOLERANCE, min_occurrences:int = MIN_OCCURENCES) -> List[np.float64]:
     """
     Takes all recorded distances and filters them such that similar and repeated distances are ommitted.
 
@@ -108,6 +116,7 @@ def load_grey_img(test_img:bool = False) -> np.ndarray:
             raise FileNotFoundError(f"Test image {TEST_IMG_PTH} couldn't be found")
     #convert and return
     grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    grey = cv2.convertScaleAbs(grey, alpha=ALPHA)
     return grey
 
 
@@ -262,6 +271,8 @@ def get_track_lengths(final_distances):
 def main(verbose=True, test_img=False):
     #load img
     grey = load_grey_img(test_img)
+    
+    
     #extract useful info
     height, width = grey.shape
     max_r = min(width, height) // 2
